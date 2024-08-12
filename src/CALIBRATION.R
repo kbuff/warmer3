@@ -1,5 +1,5 @@
 
-working.dir = 'C:\\MERCC\\WARMER_v3\\warmer_v3_github_20240812'# 'pathTo_WARMER_v3_folder'
+working.dir = # 'pathTo_WARMER_v3_folder'
 setwd(working.dir)
 
 library(ggplot2)
