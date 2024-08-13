@@ -132,7 +132,7 @@ MainLoop_wSPINUP = function(elev, years, SLR, spinupYrs, inputPars, sitePars){
       #  print(dim(cohorts.state$VOL))
         
      
-        cohorts.state = updateDepthPOR(cohorts.state,cohorts.state, wood.den, root.den, root_por, porosityRate, minPorosity, maxPorosity, midPt, maxDeltaPor, 1,T,T)
+        cohorts.state = updateDepthPOR(cohorts.state,cohorts.state, wood.den, root.den, root_por, porosityRate, maxPorosity, minPorosity,  maxDeltaPor, midPt, 1,T,T)
        
    
        #  for(i in 1:10){
