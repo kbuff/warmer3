@@ -91,14 +91,23 @@ age.cohorts.fun2 = function(tree.state.yr, cohorts, tt, step, soilDepth, z, perC
   cohorts$ROM[,1] = cohorts$ROM[,1]- cohorts$ROM[,1]*(1-refracRemainSurf) 
  
   #add by species
-  for(sp in 1:nSpecies){
-    #calculate surface decomposition and input from wood and leaf litter
-    cohorts$ROM[,1] = cohorts$ROM[,1]  + tree.state.yr$LeafLitter[,sp]*leafRefrac[sp]/step#*(refracRemainSurf)/step 
-    cohorts$LOM[,1] = cohorts$LOM[,1] + (tree.state.yr$LeafLitter[,sp]*(1-leafRefrac[sp])/step)#*labileRemain  
+if(nSpecies>1){
+    for(sp in 1:nSpecies){
+      #calculate surface decomposition and input from wood and leaf litter
+      cohorts$ROM[,1] = cohorts$ROM[,1]  + tree.state.yr$LeafLitter[,sp]*leafRefrac[sp]/step#*(refracRemainSurf)/step 
+      cohorts$LOM[,1] = cohorts$LOM[,1] + (tree.state.yr$LeafLitter[,sp]*(1-leafRefrac[sp])/step)#*labileRemain  
+      
+      #wood litter moves into structural root litter pool at a given rate [wood2soil]
+      cohorts$SRP[,sp,1] = cohorts$SRP[,sp,1] + cohorts$WOODLITTER[,sp,1]*wood2soil/step
+      cohorts$WOODLITTER[,sp,1] =  cohorts$WOODLITTER[,sp,1] -  cohorts$WOODLITTER[,sp,1]*wood2soil/step +  tree.state.yr$WoodLitter[,sp]/step 
+    }
+  } else {
+    cohorts$ROM[,1] = cohorts$ROM[,1]  + tree.state.yr$LeafLitter*leafRefrac/step#*(refracRemainSurf)/step 
+    cohorts$LOM[,1] = cohorts$LOM[,1] + (tree.state.yr$LeafLitter*(1-leafRefrac)/step)#*labileRemain  
     
     #wood litter moves into structural root litter pool at a given rate [wood2soil]
-    cohorts$SRP[,sp,1] = cohorts$SRP[,sp,1] + cohorts$WOODLITTER[,sp,1]*wood2soil/step
-    cohorts$WOODLITTER[,sp,1] =  cohorts$WOODLITTER[,sp,1] -  cohorts$WOODLITTER[,sp,1]*wood2soil/step +  tree.state.yr$WoodLitter[,sp]/step 
+    cohorts$SRP[,1,1] = cohorts$SRP[,1,1] + cohorts$WOODLITTER[,1,1]*wood2soil/step
+    cohorts$WOODLITTER[,1,1] =  cohorts$WOODLITTER[,1,1] -  cohorts$WOODLITTER[,1,1]*wood2soil/step +  tree.state.yr$WoodLitter/step 
   }
   
   #  print('decomp')
@@ -163,6 +172,7 @@ age.cohorts.fun2 = function(tree.state.yr, cohorts, tt, step, soilDepth, z, perC
     
   } 
   
+  if(nSpecies>1){
    for(sp in 1:nSpecies){
      #living roots below the rooting depth are moved to dead root pools. Allows plant to be buried by a sediment pulse
      deepRoots = (coefsOut[,sp,1:(ncohorts-1)]*0)
@@ -190,7 +200,38 @@ age.cohorts.fun2 = function(tree.state.yr, cohorts, tt, step, soilDepth, z, perC
      cohorts$COARSEROOTS[,sp,2:ncohorts] = pmax(0,  cohorts$COARSEROOTS[,sp,2:ncohorts])
      cohorts$SMALLROOTS[,sp,2:ncohorts]  = pmax(0,  cohorts$SMALLROOTS[,sp,2:ncohorts])
      cohorts$STRUCROOTS[,sp,2:ncohorts]  = pmax(0,  cohorts$STRUCROOTS[,sp,2:ncohorts])
-     }
+   }
+  } else {
+
+      #living roots below the rooting depth are moved to dead root pools. Allows plant to be buried by a sediment pulse
+      deepRoots = (coefsOut[,,1:(ncohorts-1)]*0)
+      VLdeepRoots = (coefsOutBR[,,1:(ncohorts-1)]*0)
+      
+      #distribute live roots downcore. effectively re-grow each timestep 
+      cohorts$FINEROOTS[,,2:ncohorts] =    coefsOut[,1,] * tree.state.yr$FineRoots
+      cohorts$COARSEROOTS[,,2:ncohorts] =  coefsOut[,1,] * tree.state.yr$CoarseRoots
+      cohorts$SMALLROOTS[,,2:ncohorts] =   coefsOut[,1,] * tree.state.yr$SmallRoots
+      cohorts$STRUCROOTS[,,2:ncohorts] =   coefsOutBR[,1,]*tree.state.yr$StrucRoots
+      
+      #living roots below the live root zone are moved to root litter. Add in dead roots [from aboveground tree death] and woodlitter
+      cohorts$SRP[,,2:ncohorts] = cohorts$SRP[,,2:ncohorts] + tree.state.yr$DeadRoot_Litter*strucRoots*coefsOutBR[,1,]/step + cohorts$STRUCROOTS[,,2:ncohorts]*VLdeepRoots + cohorts$WOODLITTER[,,2:ncohorts]*wood2soil/step
+      cohorts$CRP[,,2:ncohorts]  = cohorts$CRP[,,2:ncohorts]  + tree.state.yr$DeadRoot_Litter*(1-strucRoots)*(coarseRoots)*coefsOut[,1,]/step  + cohorts$COARSEROOTS[,,2:ncohorts]*deepRoots
+      cohorts$FRP[,,2:ncohorts]  = cohorts$FRP[,,2:ncohorts]  + coefsOut[,1,]*tree.state.yr$DeadRoot_Litter*(1-strucRoots)*(fineRoots)/step  + 
+        coefsOut[,1,]*tree.state.yr$DeadRoot_Litter*(1-strucRoots)*(smallRoots)/step  + cohorts$SMALLROOTS[,,2:ncohorts]*deepRoots + cohorts$FINEROOTS[,,2:ncohorts]*deepRoots
+      
+      cohorts$FINEROOTS[,,2:ncohorts]    = cohorts$FINEROOTS[,,2:ncohorts]*(1-deepRoots)
+      cohorts$COARSEROOTS[,,2:ncohorts]  =  cohorts$COARSEROOTS[,,2:ncohorts]*(1-deepRoots)
+      cohorts$SMALLROOTS[,,2:ncohorts]   = cohorts$SMALLROOTS[,,2:ncohorts]*(1-deepRoots)
+      cohorts$STRUCROOTS[,,2:ncohorts]   = cohorts$STRUCROOTS[,,2:ncohorts]*(1-VLdeepRoots)
+      
+      #root mass cant be negative
+      cohorts$FINEROOTS[,,2:ncohorts]   = pmax(0,  cohorts$FINEROOTS[,,2:ncohorts])
+      cohorts$COARSEROOTS[,,2:ncohorts] = pmax(0,  cohorts$COARSEROOTS[,,2:ncohorts])
+      cohorts$SMALLROOTS[,,2:ncohorts]  = pmax(0,  cohorts$SMALLROOTS[,,2:ncohorts])
+      cohorts$STRUCROOTS[,,2:ncohorts]  = pmax(0,  cohorts$STRUCROOTS[,,2:ncohorts])
+    
+  }
+      
        
      
   #Surface Deposition (mineral deposition & wood litter:aboveground production & fallen dead) 
