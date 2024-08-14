@@ -352,11 +352,19 @@ if(Initialize==T){
                      woody = cohorts$STRUCROOTS[Act,,] + cohorts$WOODLITTER[Act,,],
                      deadWoody = cohorts$SRP[Act,,])  #for calculate of %OM
   
-  liveRootVol = array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$liveRoots[,x,]/root.den[x]))), dim=c(length(elev), ncohorts))
-  deadRootVol = array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadRoots[,x,]/(root.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
-  woodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$woody[,x,]/(wood.den[x])))), dim=c(length(elev), ncohorts))
-  deadWoodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadWoody[,x,]/(wood.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
-  
+   if(nSpecies>1){
+    liveRootVol = array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$liveRoots[,x,]/root.den[x]))), dim=c(length(elev), ncohorts))
+    deadRootVol = array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadRoots[,x,]/(root.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
+    woodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$woody[,x,]/(wood.den[x])))), dim=c(length(elev), ncohorts))
+    deadWoodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadWoody[,x,]/(wood.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
+    cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ apply(cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody, FUN=sum, MARGIN=c(1,3) ))/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
+   }else {
+     liveRootVol = array(cohorts.vol$liveRoots/root.den, dim=c(length(elev), ncohorts))
+     deadRootVol = array(cohorts.vol$deadRoots/(root.den/(1-root_por)), dim=c(length(elev), ncohorts))
+     woodyVol =  array(cohorts.vol$woody/wood.den, dim=c(length(elev), ncohorts))
+     deadWoodyVol =  array(cohorts.vol$deadWoody/(wood.den/(1-root_por)), dim=c(length(elev), ncohorts)) 
+     cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody)/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
+   } 
   #cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ apply(cohorts.vol$liveRoots+cohorts.vol$deadRoots, FUN=sum, MARGIN=c(1,3) ))/((liveRootVol+deadRootVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol)/(1- cohorts$POR[Act,])))
   
   #With structural roots and wood litter
