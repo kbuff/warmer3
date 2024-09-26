@@ -12,29 +12,17 @@ calc.BD = function(cohorts.vol, n){
     mass = pmax(cohorts.vol$OM[,n]+cohorts.vol$MIN[,n] , 1e-8)
     pOM_n =  sapply(1:length(mass), function(x)  ifelse(mass[x]>0, (cohorts.vol$OM[x,n])/mass[x], 0) )
     pOM_n = pmin(pOM_n,1)
-    BD =  mapply( bulk.densityMass, pOM_n, (g))
-    
+    BD =  mapply( bulk.densityMass, pOM_n, (g))    
   }
   return(list(BD=BD, pOM=pOM_n))
 }
 
-# porosity = function(massAbv, rate, minPor, maxPor, pOM, mid){
-#  # sig=  1/(1+(exp((massAbv*(1-pOM^0.5)-mid)*rate)))
-#  sig=  1/(1+(exp((massAbv-mid)*rate)))
-#   sigMax = 1/(1+(exp((0-mid)*rate)))
-#   sig/sigMax*(maxPor-minPor)+minPor
-# }
 
 porosity = function(density, rate, minPor, maxPor, pOM, mid){
-  # sig=  1/(1+(exp((massAbv*(1-pOM^0.5)-mid)*rate)))
   sig=  1/(1+(exp((density-mid)*rate)))
   sigMax = 1/(1+(exp((0-mid)*rate)))
   sig/sigMax*(maxPor-minPor)+minPor
 }
-
-#den=seq(0,1,0.05)
-#plot(den, sapply(den, porosity, rate=5, minPor=0.6, maxPor=0.8, pOM=0.5, mid=0))
-#porosityRate=5
 
 #uses rowsums across species
 addVOLs=function(Volumesn, doRowSum){
@@ -80,26 +68,12 @@ addVOLROOTS = function(Volumesn, doRowSums){
 #during spinup, compact bottom layer too
 
 updateVOLs = function(cohorts, oldCohorts,porosityRate,maxPorosity, minPorosity, maxDeltaPor,midPt,DT, Initialize, SPINUP){
-  #cohorts=roundCohorts(cohorts)  #round off small masses
-  Act=1:nrow(cohorts$LOM)
-  
+  Act=1:nrow(cohorts$LOM)  
   cohorts.vol = list(OM=cohorts$ROM[Act,]+cohorts$LOM[Act,], MIN=cohorts$MIN[Act,] + cohorts$SAND[Act,])  #for calculate of %OM
-  
-  #  print(dim(cohorts.vol$OM))
-  # massAbv= cbind(0,t(apply(FUN=cumsum, cohorts$ROM[Act,]  +cohorts$LOM[Act,]+cohorts$MIN[Act,] + cohorts$SAND[Act,], MARGIN=1  )))[,1:ncohorts]
-  #  massAbv=round(massAbv,8)
   depth= cbind(0,t(apply(FUN=cumsum, cohorts$VOL[Act,], MARGIN=1  )))[,1:ncohorts]
   mass = cbind(0,t(apply(FUN=cumsum, cohorts.vol$OM+cohorts.vol$MIN, MARGIN=1)))[,1:ncohorts]
   density=mass/depth
-  density = ifelse(is.nan(density) | is.infinite(density),0, density)  
-  #  massAbv=round(massAbv,8)
-  
-  #  massAbv1=cbind(0,t(apply(FUN=cumsum, oldCohorts$ROM[Act,]  +oldCohorts$LOM[Act,]+oldCohorts$MIN[Act,] + oldCohorts$SAND[Act,], MARGIN=1  )))[,1:ncohorts]
-  
-  #  massAbv= cbind(0,t(apply(FUN=cumsum, cohorts$ROM[Act,]  +cohorts$LOM[Act,]+cohorts$MIN[Act,] + cohorts$SAND[Act,] + ( apply(cohorts$FINEROOTS[Act,,]+cohorts$SMALLROOTS[Act,,]+cohorts$COARSEROOTS[Act,,]+cohorts$CRP[Act,,]+cohorts$FRP[Act,,]+ cohorts$SRP[Act,,]+cohorts$STRUCROOTS[Act,,], FUN=sum, MARGIN=c(1,3)) ) ,  MARGIN=1  )))[,1:ncohorts]
-  #  massAbv1= cbind(0,t(apply(FUN=cumsum, oldCohorts$ROM[Act,]  +oldCohorts$LOM[Act,]+oldCohorts$MIN[Act,] + oldCohorts$SAND[Act,] + ( apply(oldCohorts$FINEROOTS[Act,,]+oldCohorts$SMALLROOTS[Act,,]+oldCohorts$COARSEROOTS[Act,,]+oldCohorts$CRP[Act,,]+oldCohorts$FRP[Act,,]+ oldCohorts$SRP[Act,,]+oldCohorts$STRUCROOTS[Act,,], FUN=sum, MARGIN=c(1,3)) ) ,  MARGIN=1  )))[,1:ncohorts]
-  
-  # recalPor= ifelse(rowSums(massAbv-massAbv1)==0, 10,1) #update porosity only if the massAbv has changed
+  density = ifelse(is.nan(density) | is.infinite(density),0, density) 
   
   pOM = (cohorts.vol$OM/(cohorts.vol$OM+cohorts.vol$MIN))
   porold = cohorts$POR[Act,]
@@ -171,17 +145,7 @@ updateVOLs = function(cohorts, oldCohorts,porosityRate,maxPorosity, minPorosity,
                           #    vSTRUCROOTS =   array(rowSums(sapply(1:nSpecies, function(x) (cohorts$STRUCROOTS[,x,]/wood.den[x])) ), dim=c(length(elev), ncohorts)),
                           #    vWOODLITTER=    array(rowSums(sapply(1:nSpecies, function(x) (cohorts$WOODLITTER[,x,]/wood.den[x])) ), dim=c(length(elev), ncohorts)) )
                           F)
-  
-  # vRootsOLD = addVOLROOTS(list(vFRP=       oldCohorts$FRP[Act,]/(root.den/(1-root_por)),
-  #                           vCRP=          oldCohorts$CRP[Act,]/(root.den/(1-root_por)),
-  #                           # vSRP =         array(rowSums(sapply(1:nSpecies, function(x) (cohorts$SRP[,x,])/(wood.den[x]/(1-root_por[x])))), dim=c(length(elev), ncohorts)),
-  #                           vFINEROOTS =   apply(oldCohorts$FINEROOTS[Act,,], FUN=sum, MARGIN=c(1,3))/root.den, #add together the root volumes for each species. They will get moved down together 
-  #                           vSMALLROOTS =  apply(oldCohorts$SMALLROOTS[Act,,], FUN=sum, MARGIN=c(1,3))/root.den,
-  #                           vCOARSEROOTS = apply(oldCohorts$COARSEROOTS[Act,,], FUN=sum, MARGIN=c(1,3))/root.den),
-  #                         #    vSTRUCROOTS =   array(rowSums(sapply(1:nSpecies, function(x) (cohorts$STRUCROOTS[,x,]/wood.den[x])) ), dim=c(length(elev), ncohorts)),
-  #                      #    vWOODLITTER=    array(rowSums(sapply(1:nSpecies, function(x) (cohorts$WOODLITTER[,x,]/wood.den[x])) ), dim=c(length(elev), ncohorts)) )
-  #                     F)
-  
+    
   deltavRoots= vRoots-vRootsOLD                             #change in root volume
   minVoid= vstuff*minPorosity/(1-minPorosity)               #minimum void space to maintain minimum porosity
   # t(array(z.depth, dim=c(ncohorts,length(elev)) ))
@@ -357,13 +321,13 @@ if(Initialize==T){
     deadRootVol = array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadRoots[,x,]/(root.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
     woodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$woody[,x,]/(wood.den[x])))), dim=c(length(elev), ncohorts))
     deadWoodyVol =  array(rowSums(sapply(1:nSpecies, function(x) (cohorts.vol$deadWoody[,x,]/(wood.den[x]/(1-root_por[x]))))), dim=c(length(elev), ncohorts))
-    cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ apply(cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody, FUN=sum, MARGIN=c(1,3) ))/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
+    cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ apply(cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody, FUN=sum, MARGIN=c(1,3) ))/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ (cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
    }else {
      liveRootVol = array(cohorts.vol$liveRoots/root.den, dim=c(length(elev), ncohorts))
      deadRootVol = array(cohorts.vol$deadRoots/(root.den/(1-root_por)), dim=c(length(elev), ncohorts))
      woodyVol =  array(cohorts.vol$woody/wood.den, dim=c(length(elev), ncohorts))
      deadWoodyVol =  array(cohorts.vol$deadWoody/(wood.den/(1-root_por)), dim=c(length(elev), ncohorts)) 
-     cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody)/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
+     cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ cohorts.vol$liveRoots+cohorts.vol$deadRoots+cohorts.vol$woody+cohorts.vol$deadWoody)/((liveRootVol+deadRootVol+woodyVol+deadWoodyVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ (cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol+woodyVol+deadWoodyVol)/(1- cohorts$POR[Act,])))
    } 
   #cohorts$BD[Act,]  = (cohorts.vol$OM+cohorts.vol$MIN+ apply(cohorts.vol$liveRoots+cohorts.vol$deadRoots, FUN=sum, MARGIN=c(1,3) ))/((liveRootVol+deadRootVol+cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+ cohorts$POR[Act,]*(cohorts.vol$OM/OMden+ cohorts.vol$MIN/MINden+liveRootVol+deadRootVol)/(1- cohorts$POR[Act,])))
   
