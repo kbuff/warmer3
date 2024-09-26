@@ -43,7 +43,7 @@ MainLoop_wSPINUP = function(elev, years, SLR, spinupYrs, inputPars, sitePars){
   root.den <<- inputPars$pars$root.den
   wood.den <<- inputPars$pars$wood.den
   root_por <<- inputPars$pars$root_por
-  #ssc <<- sitePars$ssc
+  ssc <<- sitePars$ssc
   
   root_shoot <<- inputPars$rsFUN
   coverAgTransfer = inputPars$coverAgTransfer
