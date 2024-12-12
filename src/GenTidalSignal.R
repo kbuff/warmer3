@@ -17,7 +17,7 @@ generate_tidal_signal <- function(tidal_range, time_range, time_interval, consti
     amplitude <- tidal_range/2 * constituents$amplitude[i] 
     phase <- constituents$phase[i]
     speed <- constituents$speed[i]
-   # tidal_signal <- tidal_signal + amplitude * sin(2 * pi * (time - phase) * speed)
+    # tidal_signal <- tidal_signal + amplitude * sin(2 * pi * (time - phase) * speed)
     water = water + (amplitude * cos((speed * pi / 180) * time + phase))
   }
   
@@ -28,12 +28,8 @@ generate_tidal_signal <- function(tidal_range, time_range, time_interval, consti
 }
 
 # Define parameters
-#tidal_range <- 4 # Input tidal range (in meters)
 time_range <- c(0, 24*365) # Time range (in hours)
 time_interval <-0.1#  0.25 # Time interval (in hours)
-#tide_type <- "mixed semi-diurnal" # Choose tide type: "diurnal", "semi-diurnal", or "mixed semi-diurnal"
-##tide_type <- "diurnal" # Choose tide type: "diurnal", "semi-diurnal", or "mixed semi-diurnal"
-#tide_type <- "semi-diurnal" # Choose tide type: "diurnal", "semi-diurnal", or "mixed semi-diurnal"
 
 # Define constituent properties
 constituent_properties <- data.frame(constituent = c("M2", "S2", "N2", "K2"),
@@ -52,7 +48,7 @@ constituents <- switch(tide_type,
 
 # Generate tidal signal
 if(tide_type=='user-defined'){
-theLevels <- generate_tidal_signal(2, time_range, time_interval, constituents)
+  theLevels <- generate_tidal_signal(2, time_range, time_interval, constituents)
 } else {
   theLevels <- generate_tidal_signal(TR, time_range, time_interval, constituents)
 }
@@ -65,16 +61,12 @@ ggplot()  +
   labs(x = "Time", y = "Tidal Signal") +
   ggtitle(paste("Tidal Signal with Tidal Range =", TR, "meters and Tide Type =", tide_type))
 
-
 zRange=seq(min(theLevels$water)-0.1, max(theLevels$water)+0.1, 0.01)
 inundation.duration<- sapply(zRange, function(z) sum(theLevels$water > z, na.rm=T))
 inundDur = inundation.duration/max(inundation.duration)
 inundFun = approxfun((inundDur)~(zRange*100), rule=2)  #flooding freq
 
 plot(zRange,inundDur, type='l', ylab='Inundation Time',xlab='Elevation rMSL m', main=tide_type)
-
-
-
 
 #IF =  sapply(zRange, function(z) sum(rleid( ifelse(diff(theLevels$water)>0 & theLevels$water>z,1,0))  ))
 

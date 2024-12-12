@@ -5,28 +5,21 @@ require(doParallel)
 #calculate sediment deposition.  
 #deposition sensitive to settling velocity
 
-
-
-
-# Sedimentation function with erosion
-
 genMineralFunction = function(theLevels){
-  
   mineralBiomass = function(theLevels){
     timestep = 1 #1 yr
-   
+    
     #UNITS: z1= m, SSC.i= g/ml, B=g/m2  theLevels$water=m
     SSC.out <- function(z1, SSC.i, B, theLevels){
-      
-     SSC.i=SSC.i/1000  #convert mg/l to kg/m3
+      SSC.i=SSC.i/1000  #convert mg/l to kg/m3
       ws= 0.2/1000  #m/s    0.2mm/s  
-      U = 0.02  #horizontal flow across the marsh, m/s  -- not used
-     
-      #veg interception-- for marshes. NEED TO ADJUST FOR MANGROVES
+      U = 0.02  #horizontal flow across the marsh, m/s
+      
+      #veg interception-- for marshes
       d50=50/1000000 #50 um in m
       beta = 0.382
       alpha = ((U^1.7)*d50^2*(1.02*10^6))
-       
+      
       dep.tot = 0
       SSC.inst = SSC.i * .75  #for when the tide function begins with a negative slope
       
@@ -64,9 +57,8 @@ genMineralFunction = function(theLevels){
       SSC.out(inputs$z, inputs$SSC.i,inputs$B, theLevels)#*12 # inputs$B,
     }
     return(out.Fun)
-  }  #, z, SSC.i, B
+  } 
   
- 
   #run across a range of elevations and aboveground biomasses
   z = seq(min(theLevels$water)*2, max(theLevels$water)*1.1, TR/25)#/100  #cm, MSL
   B= seq(0,50000, length.out = length(z))
@@ -81,29 +73,22 @@ genMineralFunction = function(theLevels){
   require(doParallel)
   require(pracma)
   
-  
   ###############################################
   
   sfInit(parallel=T, cpus=detectCores()-1)
   sfExportAll()
   results = sfLapply(inputs2, fun= run_allSSC)
   sfStop()
-    
-    output = cbind(inputs,unlist(results))
-   
- # plot(z,output[output$B==500,]$`unlist(results)`*10000*20, ylab='Mineral Dep', type='l')
   
- # plot(z,output30[output30$B==500,]$`unlist(results30)`*10000, ylab='Mineral Dep', type='l')
-  
+  output = cbind(inputs,unlist(results))
   out =NULL
   for(j in 1:length(z)){
-   out=cbind(out, output[output$z==z[j],]$`unlist(results)`)
+    out=cbind(out, output[output$z==z[j],]$`unlist(results)`)
   }
   
   colnames(out)= z
   rownames(out)=B
- # filled.contour(out)
- 
+  
   interp1 = function(z1, B1){
     res=pracma::interp2(x=z, y=B, Z=out, xp=z1/100, yp=B1, method='linear')
     if(is.na(res) & z1/100<min(z)){
@@ -117,9 +102,6 @@ genMineralFunction = function(theLevels){
     }
     return(res)
   }
- # interp1 = interp2(x=z, y=B, Z=out, xp=0.6, yp=1000, method='linear')*5*10000
- #interp1(-50, 500) 
-
   return(interp1)  #returns a function that provides deposition in g/cm2 provided input elevation (cm) and aboveground biomass (g/m2)
   
 }

@@ -1,38 +1,22 @@
-library('abind')
 
-#function to concact lists (c)
-conCatList = function(L1, L2){
-  if(is.null(L1)){
-    return(L2)
-  }
-  
-  for(i in 1:length(L1)){
-    if(is.null( dim(L2[[i]]))){
-      L1[[i]] = c(L1[[i]], L2[[i]])
-    } else{
-      L1[[i]] = array( abind(L1[[i]], L2[[i]], along=1), dim=c(dim(L1[[i]])[[1]]+1, dim(L1[[i]])[2:length(dim(L1[[i]]))] )    )
-    }
-  }
-  L1
+
+biomassTransferFUN = function(transferArray, inundation, cc, maxB, ...){
+  transferArray(inundation,cc, maxB, ...)
 }
 
-#function to concact lists (rbind)
-combineList = function(L1, L2){
-  if(is.null(L1)){
-    return(L2)
+
+cumSum = function(arr,d1, d2){
+  if(dim(arr)[1]==1){
+    return(sum(arr[1,1:d2]) )
+  } else{
+    if(d2>1 & d2-d1>0){
+      sub.arr = arr[,d1:d2]
+      return(apply(sub.arr, MARGIN=1, FUN=sum) )
+    }
+    else {
+      return(arr[,d2])
+    }
   }
-  
-  for(i in 1:length(L1)){
-    if(is.null( dim(L2[[i]]))){
-      if(!is.function(L1[[i]])){
-        L1[[i]] = c(L1[[i]], L2[[i]])
-      }
-    } else{
-      if(!is.function(L1[[i]])){
-        L1[[i]] =  array( abind(L1[[i]], L2[[i]], along=1), dim=c(dim(L1[[i]])[[1]]+1, dim(L1[[i]])[2:length(dim(L1[[i]]))] )    )
-      }}
-  }
-  L1
 }
 
 findCohort = function(d, depthCohorts){
@@ -44,6 +28,36 @@ findCohort = function(d, depthCohorts){
 }
 
 
-biomassTransferFUN = function(transferArray, zStar, cc, ...){
-  transferArray(zStar,cc, ...)
+growRoots = function(top, bottom, rootDepthMax, shape, expDecay){
+  if(shape=='lin'){
+    bottom[which(bottom>rootDepthMax)]=rootDepthMax
+    top[which(top>rootDepthMax)]=rootDepthMax
+    slope = -2*1/(rootDepthMax^2)
+    intercept = 2*1/rootDepthMax
+    rootMass = intercept*(bottom-top) + slope/2*(bottom^2-top^2)
+    return(rootMass)
+    
+  } else if (shape=='exp') {
+    bottom[which(bottom>rootDepthMax)]=rootDepthMax
+    top[which(top>rootDepthMax)]=rootDepthMax
+    b <- expDecay / rootDepthMax
+    a <- 1*(1/b*exp(b*rootDepthMax) - exp(b*rootDepthMax) * rootDepthMax-1/b)^-1
+    m <- a*exp(b*rootDepthMax)
+    rootMass <- a/b*(exp(b*bottom)-exp(b*top)) +  m*(top-bottom)
+    return(rootMass)
+  }
 }
+
+yr.slice = function(tree.state, tt){
+  tree.state.yr = list(
+    FineRoots = tree.state$FineRoots[,,tt],
+    CoarseRoots = tree.state$CoarseRoots[,,tt],
+    StrucRoots = tree.state$StrucRoots[,,tt],
+    SmallRoots = tree.state$SmallRoots[,,tt],
+    LeafLitter = tree.state$LeafLitter[,,tt],
+    WoodLitter = tree.state$WoodLitter[,,tt],
+    DeadRoot_Litter = tree.state$DeadRoot_Litter[,,tt])
+  return(tree.state.yr)
+}
+
+
