@@ -1,0 +1,7 @@
+Order,Source,core_id,year,month,day,latitude,longitude,position_method,elevation,elevation_datum,Depths of peak Cs137 (min cm),Collected,Age,Accretion_cmyr,MAccum_gm2yr,OAccum_gm2yr,MAccum_gm2yr_50yrs,OAccum_gm2yr_50yrs,SUBSET
+,Callaway etal 2012,CC_A_Low,,,,,,RTK,1.649,NAVD88,,,,0.5416,1947.112,284.4832,965.8539,144.2424,
+,Callaway etal 2012,CC_A_Mid,,,,,,RTK,1.873,NAVD88,,,,0.38,1915.811,167.0848,911.6718,89.9235,
+,Callaway etal 2012,CC_A_High,,,,,,RTK,1.821,NAVD88,,,,0.43,1518.796,312.1395,157.6553,676.3025,
+,Callaway etal 2012,CC_B_Low,,,,,,RTK,1.803,NAVD88,,,,0.34,1972.883,197.0232,103.6291,952.9589,
+,Callaway etal 2012,CC_B_Mid,,,,,,RTK,1.829,NAVD88,,,,0.31,1014.299,193.6007,100.6296,514.6649,
+,Callaway etal 2012,CC_B_High,,,,,,RTK,1.865,NAVD88,,,,0.2,966.5415,137.4364,76.3123,508.4102,
